@@ -10,11 +10,37 @@ import numpy as np
 #    Dimensions
 # ------------------------------------------
 
-def read_x_dim(epyfield) -> np.array:
+def read_x_dim(epyfield) -> np.ndarray:
+    """
+    Extract the x-dimension values from an Epygram field.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    np.ndarray
+        Array of x-dimension values.
+    """
     xvals = epyfield.geometry._get_grid(indextype='xy')[0][0,:]
     return np.array(xvals)
 
-def read_y_dim(epyfield) -> np.array:
+def read_y_dim(epyfield) -> np.ndarray:
+    """
+    Extract the y-dimension values from an Epygram field.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    np.ndarray
+        Array of y-dimension values.
+    """
     yvals = epyfield.geometry._get_grid(indextype='xy')[1][:,0]
     return np.array(yvals)
 
@@ -22,15 +48,54 @@ def read_y_dim(epyfield) -> np.array:
 #    proj related
 # ------------------------------------------
 
-def read_proj(epyfield):
+def read_proj(epyfield) -> 'Cartopy.crs.CRS':
+    """
+    Get the cartopy CRS from the Epygram field geometry.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    cartopy.crs.CRS
+        The cartopy coordinate reference system.
+    """
     crs = epyfield.geometry.default_cartopy_CRS()
     return crs
 
 
 def read_grid_details(epyfield) -> dict:
+    """
+    Get grid dimension details from the Epygram field geometry.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    dict
+        Dictionary of grid dimensions.
+    """
     return epyfield.geometry.dimensions
 
 def read_lat_lons(epyfield):
+    """
+    Get longitude and latitude grids from the Epygram field geometry.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    tuple of np.ndarray
+        Tuple containing (lons, lats) arrays.
+    """
     lons, lats = epyfield.geometry.get_lonlat_grid()
     return lons, lats
 
@@ -40,13 +105,52 @@ def read_lat_lons(epyfield):
 # ------------------------------------------
 
 def read_basedate(epyfield) -> str:
+    """
+    Get the base date (reference time) of the field validity.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    str
+        ISO formatted base date string.
+    """
     return epyfield.validity.getbasis().isoformat()
 
 
 def read_validdate(epyfield) -> str:
+    """
+    Get the valid date (forecast time) of the field.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    str
+        ISO formatted valid date string.
+    """
     return epyfield.validity.get().isoformat()
 
 def read_cumulativeduration(epyfield) -> str:
+    """
+    Get the cumulative duration of the field validity.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    str
+        String representation of the cumulative duration.
+    """
     return str(epyfield.validity.cumulativeduration())
 
 
@@ -55,6 +159,19 @@ def read_cumulativeduration(epyfield) -> str:
 # ------------------------------------------
 
 def read_vertical_attrs(epyresource) -> dict:
+    """
+    Get vertical coordinate attributes from the Epygram resource.
+
+    Parameters
+    ----------
+    epyresource : Epygram resource
+        The Epygram resource object.
+
+    Returns
+    -------
+    dict
+        Dictionary of vertical coordinate grid attributes.
+    """
     vcoords = epyresource.geometry.vcoordinate
     return vcoords.grid
 
@@ -66,8 +183,21 @@ def read_vertical_attrs(epyresource) -> dict:
 # ------------------------------------------
 
 def read_h2d_field_attrs(epyfield) -> dict:
+    """
+    Extract and flatten the attributes dictionary from an Epygram field.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    dict
+        Dictionary of field attributes.
+    """
     attrs = epyfield.fid
-    #'generic' is a nested dict, unnest it 
+    # 'generic' is a nested dict, unnest it 
     if 'generic' in attrs.keys():
         if isinstance(attrs['generic'], dict):
             attrs.update(attrs['generic'])

@@ -18,6 +18,14 @@ from faengine.settings import defaultsettings
 
 
 class FAEngine(BackendEntrypoint):
+    """
+    Xarray backend engine for reading FA files using Epygram.
+
+    This engine enables seamless integration of FA files with xarray by providing
+    methods to open and parse FA resources, extract fields, coordinates, and metadata,
+    and format them into xarray-compatible datasets.
+
+    """
     
     # open_dataset_parameters = ["filename_or_obj", "drop_variables"]
     description =  "Use FA files in Xarray."
@@ -174,8 +182,6 @@ class FAEngine(BackendEntrypoint):
         
         #Close the readers
         r.close() #this becomes problematic when lazy-loading i think.
-        
-
         
         return ds
 
