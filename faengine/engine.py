@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 import fnmatch
 
-
+import pandas as pd
 import numpy as np
 import xarray as xr
 from xarray.backends import BackendEntrypoint
@@ -143,8 +143,6 @@ class FAEngine(BackendEntrypoint):
             dataset_coords[namesettings['coordnames']['latcoord']]= formatters.fmt_lat_variable(lats)
             dataset_coords[namesettings['coordnames']['loncoord']]= formatters.fmt_lon_variable(lons)
 
-
-
         # --- Reading attributes ----
         dataset_attrs={}
 
@@ -173,8 +171,30 @@ class FAEngine(BackendEntrypoint):
         
         #Close the readers
         r.close() #this becomes problematic when lazy-loading i think.
+
+        ds = static_test(ds=ds, namesettings=namesettings)
         
         return ds
+
+
+def static_test(ds, namesettings):
+    #test if the FA file is static --> PGD file
+    unix_epoch = pd.Timestamp(0)
+    is_pgd = (((pd.Timestamp(ds.attrs['validtime']) - unix_epoch) < pd.Timedelta('1s')) &
+        ((ds.attrs['basedate'] == ds.attrs['validtime'])))
+    
+    if is_pgd:
+        ds.attrs['PGD_detected'] = 'True'
+        #Drop all the time dimensions 
+        ds = (ds
+              .isel({namesettings['coordnames']['validtime']:0,
+                     namesettings['coordnames']['basetime']: 0})
+            )
+    else: 
+        ds.attrs['PGD_detected'] = 'False'
+        
+    return ds
+        
 
 
 

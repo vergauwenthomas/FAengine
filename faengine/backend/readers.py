@@ -118,7 +118,9 @@ def read_basedate(epyfield) -> str:
     str
         ISO formatted base date string.
     """
-    return epyfield.validity.getbasis().isoformat()
+    basedate = epyfield.validity.getbasis() #Get datetime.datetime
+    basedate = _check_timestamp(basedate) #format to pd.timestamp and check for pgd
+    return basedate.isoformat() #to str
 
 
 def read_validdate(epyfield) -> str:
@@ -135,7 +137,9 @@ def read_validdate(epyfield) -> str:
     str
         ISO formatted valid date string.
     """
-    return epyfield.validity.get().isoformat()
+    validate = epyfield.validity.get() #get validate as dattime.datetime
+    validate = _check_timestamp(validate) #to pd.timestamp and pgd checking
+    return validate.isoformat() #to string
 
 def read_cumulativeduration(epyfield) -> str:
     """
@@ -204,3 +208,18 @@ def read_h2d_field_attrs(epyfield) -> dict:
             attrs.pop('generic')
 
     return attrs
+
+
+# ------------------------------------------
+#    helpers
+# ------------------------------------------
+
+def _check_timestamp(timestamp) -> pd.Timestamp:
+    timestamp = pd.Timestamp(timestamp)
+    if timestamp.year == 1:
+        #This is indication of PGD file !! set validtime an reference timme 
+        #to unix epoch 
+        timestamp = pd.Timestamp(0)
+
+    return timestamp
+   
