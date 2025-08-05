@@ -49,6 +49,7 @@ ds = xr.open_dataset(filename_or_obj=path_to_FA,
                     )
 ds
 ```
+
 Or if you want to open and combine multiple FA files:
 
 ```python
@@ -71,12 +72,6 @@ ds = xr.open_mfdataset(Fa_file_list,
                         'create_base_dimension': True, 
                      },
                      combine='by_coords' #!!
-                    )
-ds
-
-```
-                     },
-                     combine='by_coords' #!!  
                     )
 ds
 
