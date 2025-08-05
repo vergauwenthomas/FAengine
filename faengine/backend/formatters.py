@@ -129,9 +129,17 @@ def fmt_lat_variable(latarray) -> Variable:
     xarray.Variable
         xarray Variable for latitude.
     """
+    #CF conv
+    attrs = {
+        'long_name': 'latitude',
+        'units': 'degrees_north'
+    }
+    #extra attributes
+    attrs['fill_value'] = latarray.fill_value
+
     return Variable(dims=['y', 'x'],
                     data=latarray,
-                    attrs={'fill_value': latarray.fill_value})
+                    attrs=fmt_dict_for_attrs(attrs))
 
 def fmt_lon_variable(lonarray) -> Variable:
     """
@@ -147,7 +155,17 @@ def fmt_lon_variable(lonarray) -> Variable:
     xarray.Variable
         xarray Variable for longitude.
     """
-    return fmt_lat_variable(lonarray)
+    #CF conv
+    attrs = {
+        'long_name': 'longitude',
+        'units': 'degrees_east'
+    }
+    #extra attributes
+    attrs['fill_value'] = lonarray.fill_value
+
+    return Variable(dims=['y', 'x'],
+                    data=lonarray,
+                    attrs=fmt_dict_for_attrs(attrs))
 
 
 def fmt_validtime_variable(validtime, dimname: str) -> Variable:
