@@ -12,7 +12,7 @@ epygram.init_env()
 
 import faengine.backend.readers as readers
 import faengine.backend.formatters as formatters
-from faengine.settings import defaultsettings
+from faengine.settings import defaultsettings, default_units, default_blackfields
 
 
 
@@ -44,14 +44,16 @@ class FAEngine(BackendEntrypoint):
     create_base_dimension = True,
     # drop_extension_zone = True,
     # construct_3d_fields=True,
-    custom_settings={},
+    custom_name_settings={},
+    custom_unit_settings={},
 
     ):
         # Update defualt settings
-        settings = defaultsettings
-        settings.update(custom_settings)
+        namesettings = defaultsettings
+        namesettings.update(custom_name_settings)
 
-
+        unitsettings = default_units
+        unitsettings.update(custom_unit_settings)
 
         #1 ---- Read the resource
         r = epygram.open(
@@ -74,83 +76,72 @@ class FAEngine(BackendEntrypoint):
         if drop_variables is not None:
             if isinstance(drop_variables, str):
                 drop_variables = [drop_variables]
-            fieldnames = [f for f in fieldnames if f not in drop_variables]
+            fieldnames = list(set(fieldnames)- set(drop_variables))
+        
+        #apply default blacklist
+        fieldnames = list(set(fieldnames)- set(default_blackfields))
 
-        d2fields = r.readfields(fieldnames)
-       
-
-        #Dummy field --> used for geometry and validity extraction
-        dummy_field = d2fields[0] #first of targets
-
+      
 
         # ---  Create dims ----- 
         #Note: These are dataset dims, not all fields needs all these dims
             # Name the dimensions
-        dim_order = [settings['coordnames']['validtime'],
-                     settings['coordnames']['zdim'],
-                     settings['coordnames']['ydim'],
-                    settings['coordnames']['xdim']]
+        dim_order = [namesettings['coordnames']['validtime'],
+                     namesettings['coordnames']['zdim'],
+                     namesettings['coordnames']['ydim'],
+                     namesettings['coordnames']['xdim']]
         
         if create_base_dimension:
-            dim_order.insert(0, settings['coordnames']['basetime'])
+            dim_order.insert(0, namesettings['coordnames']['basetime'])
         
 
         # --- Create (data) variables --- 
         dataset_variables = {}
-        for field in d2fields:
-            if field.spectral:
-                field.sp2gp()
-
-            #TODO extract subdomain
-
-            #get fieldname
-            fieldname = field.fid['FA']
-
-            #Add trivial time dimension
-            fieldata = np.array([field.data]) #add trivial time dimension
-
-            # Name the dimensions of the field (ORDER IS IMPORTANT)
-            fielddim_order = [
-                settings['coordnames']['validtime'],
-                settings['coordnames']['ydim'],
-                settings['coordnames']['xdim']] #TODO this is for 2D only!! 
-
-            # Add extra reference time dimension (Cycling experiments)
-            if create_base_dimension:
-                fieldata =  np.array([fieldata])
-                fielddim_order.insert(0, settings['coordnames']['basetime'])
-
-            #read attributes
-            field_attrs = readers.read_h2d_field_attrs(field)
-            #to xarray
-            dataset_variables[fieldname] = xr.Variable(
-                    dims=fielddim_order, 
-                    data=fieldata,
-                    attrs=formatters.fmt_dict_for_attrs(field_attrs),
-                    )
-        
+        dummy_field = None
+        for fieldname in fieldnames:
+            #Read the field
+            try: 
+                field = r.readfield(fieldname)
+            except Exception as e:
+                print(f"An error occurred reading {fieldname}: {e}")
+            
+            else:
+                if isinstance(field, epygram.fields.H2DField):
+                    fieldname = field.fid['FA']
+                    fmt_fieldname = formatters.fmt_variablename(fieldname)
+                    dataset_variables[fmt_fieldname] = epy_H2D_to_variable(
+                        field=field,
+                        create_base_dim=create_base_dimension,
+                        namesettings=namesettings,
+                        unitsettings=unitsettings)
+                    if dummy_field is None:
+                        dummy_field = field
+                else:
+                    logging.warning(f"Field '{fieldname}' is not a H2D field and will be skipped.")
+                    continue
+            
         # --- Create coordinates --- 
     
         validtime =readers.read_validdate(epyfield=dummy_field)
         dataset_coords = {
             #Dims-coords
-            settings['coordnames']['xdim']: readers.read_x_dim(dummy_field),
-            settings['coordnames']['ydim']: readers.read_y_dim(dummy_field),
-            settings['coordnames']['validtime']: formatters.fmt_validtime_variable(
+            namesettings['coordnames']['xdim']: readers.read_x_dim(dummy_field),
+            namesettings['coordnames']['ydim']: readers.read_y_dim(dummy_field),
+            namesettings['coordnames']['validtime']: formatters.fmt_validtime_variable(
                 validtime=validtime,
-                dimname=settings['coordnames']['validtime']),
+                dimname=namesettings['coordnames']['validtime']),
         }
         if create_base_dimension:
             referencetime = readers.read_basedate(epyfield=dummy_field)
-            dataset_coords[settings['coordnames']['basetime']] = formatters.fmt_basedate_variable(
+            dataset_coords[namesettings['coordnames']['basetime']] = formatters.fmt_basedate_variable(
                 basedate=referencetime,
-                dimname=settings['coordnames']['basetime'])
+                dimname=namesettings['coordnames']['basetime'])
 
         if add_latlon_coords:
             lats, lons = readers.read_lat_lons(epyfield=dummy_field)
             #Dependent coords
-            dataset_coords[settings['coordnames']['latcoord']]= formatters.fmt_lat_variable(lats)
-            dataset_coords[settings['coordnames']['loncoord']]= formatters.fmt_lon_variable(lons)
+            dataset_coords[namesettings['coordnames']['latcoord']]= formatters.fmt_lat_variable(lats)
+            dataset_coords[namesettings['coordnames']['loncoord']]= formatters.fmt_lon_variable(lons)
 
 
 
@@ -187,5 +178,52 @@ class FAEngine(BackendEntrypoint):
 
 
 
+def epy_H2D_to_variable(field, create_base_dim:bool, namesettings:dict,
+                         unitsettings:dict):
+    if field.spectral:
+            field.sp2gp()
 
+    #TODO extract subdomain
+
+    #get fieldname
+    fieldname = field.fid['FA']
+
+    #Add trivial time dimension
+    fieldata = np.array([field.data]) #add trivial time dimension
+
+    # Name the dimensions of the field (ORDER IS IMPORTANT)
+    fielddim_order = [
+        namesettings['coordnames']['validtime'],
+        namesettings['coordnames']['ydim'],
+        namesettings['coordnames']['xdim']] #TODO this is for 2D only!! 
+
+    # Add extra reference time dimension (Cycling experiments)
+    if create_base_dim:
+        fieldata =  np.array([fieldata])
+        fielddim_order.insert(0, namesettings['coordnames']['basetime'])
+
+
+    # --- Create attributes ---
+    #FID attributes
+    field_attrs = readers.read_h2d_field_attrs(field) 
+    field_attrs.update(
+        {'short_name': fieldname}
+    )
+    
+    #unit attributes
+    if fieldname in unitsettings.keys():
+        unit = unitsettings[fieldname]
+    else:
+        unit='Unknown'
+    field_attrs['units'] = unit
+
+
+    
+    #to xarray
+    var = xr.Variable(
+            dims=fielddim_order, 
+            data=fieldata,
+            attrs=formatters.fmt_dict_for_attrs(field_attrs),
+            )
+    return var
 
