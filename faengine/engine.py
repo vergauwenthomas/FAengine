@@ -112,13 +112,13 @@ class FAEngine(BackendEntrypoint):
                 fieldata =  np.array([fieldata])
                 fielddim_order.insert(0, settings['coordnames']['basetime'])
 
-            field_attrs = formatters.fmt_dict_for_attrs(field.fid)
-        
+            #read attributes
+            field_attrs = readers.read_h2d_field_attrs(field)
             #to xarray
             dataset_variables[fieldname] = xr.Variable(
                     dims=fielddim_order, 
                     data=fieldata,
-                    attrs=field_attrs,
+                    attrs=formatters.fmt_dict_for_attrs(field_attrs),
                     )
         
         # --- Create coordinates --- 
@@ -155,13 +155,13 @@ class FAEngine(BackendEntrypoint):
 
         #2. Time details
         validtime = readers.read_validdate(epyfield=dummy_field)
-        dataset_attrs['validtime'] = formatters.fmt_timestamp(validtime)
+        dataset_attrs['validtime'] = formatters.fmt_timestamp_to_str(validtime)
 
         basedate = readers.read_basedate(epyfield=dummy_field)
-        dataset_attrs['basedate'] = formatters.fmt_timestamp(basedate)
+        dataset_attrs['basedate'] = formatters.fmt_timestamp_to_str(basedate)
 
         cumul_delta = readers.read_cumulativeduration(epyfield=dummy_field)
-        dataset_attrs['cumuldelta'] = formatters.fmt_timedelta(cumul_delta)
+        dataset_attrs['cumuldelta'] = formatters.fmt_timedelta_to_str(cumul_delta)
 
         #3. Vertical details
         vertical_details = readers.read_vertical_attrs(r),

@@ -64,3 +64,13 @@ def read_vertical_attrs(epyresource) -> dict:
 # ------------------------------------------
 #    general attributes
 # ------------------------------------------
+
+def read_h2d_field_attrs(epyfield) -> dict:
+    attrs = epyfield.fid
+    #'generic' is a nested dict, unnest it 
+    if 'generic' in attrs.keys():
+        if isinstance(attrs['generic'], dict):
+            attrs.update(attrs['generic'])
+            attrs.pop('generic')
+
+    return attrs
