@@ -1,0 +1,22 @@
+[project]
+name = "faengine"
+version = "0.0.1"
+description = "A xarray backend engine for FA files, by using EpyGram."
+authors = [
+    {name = "Thomas Vergauwen",email = "thomas.vergauwen@meteo.be"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy (>=2,<3.0.0)",
+    "pandas (>=2,<3.0.0)",
+    "epygram (>=2.0,<3.0.0)",
+    "xarray (>=2025.7.1,<2026.0.0)",
+    "matplotlib (>=3.10.5,<4.0.0)",
+    "dask (>=2025.7.0,<2026.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
