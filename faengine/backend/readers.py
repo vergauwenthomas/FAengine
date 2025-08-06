@@ -197,13 +197,25 @@ def read_vertical_attrs(epyresource) -> dict:
 
     #add hybrid-pressure coefs
     try:
-        retdict.update(vcoords.grid)
+        Ais = [level[1]['Ai'] for level in vcoords.grid['gridlevels']]
+        Bis = [level[1]['Bi'] for level in vcoords.grid['gridlevels']]
+
+        retdict['Ai_coef'] = list(Ais)
+        retdict['Bi_coef'] = list(Bis)
     except:
         pass
 
     #add type of first fixes surface
     try: 
-        retdict['typeoffirstficedsurface'] = vcoords.typeoffirstfixedsurface
+        vtype = vcoords.typeoffirstfixedsurface
+        retdict['typeoffirstficedsurface'] = vtype
+        if vtype == 119:
+            name = "Hybrid-pressure"
+        elif vtype == 118:
+            name = "Hybrid-height"
+        else:
+            name='unknown-vcoordname'
+        retdict['vcoord_name'] = name
     except:
         pass
 
@@ -235,7 +247,7 @@ def read_h2d_field_attrs(epyfield) -> dict:
     if 'generic' in attrs.keys():
         if isinstance(attrs['generic'], dict):
             attrs.update(attrs['generic'])
-            attrs.pop('generic')
+            del attrs['generic']
 
     return attrs
 
@@ -255,7 +267,11 @@ def read_3d_field_attrs(epyfield) -> dict:
     """
     
 
-    return read_h2d_field_attrs(epyfield)
+    attrs = read_h2d_field_attrs(epyfield)
+    # if CombineLevels is nested and contains same info as the generic
+    if 'CombineLevels' in attrs.keys():
+        del attrs['CombineLevels']
+    return attrs
 
 
 
