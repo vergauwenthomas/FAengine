@@ -2,10 +2,9 @@ import pytest
 import sys
 from pathlib import Path
 
-# import metobs_toolkit
-import pandas as pd
+
 import xarray as xr
-import numpy as np
+
 
 
 libfolder = Path(str(Path(__file__).resolve())).parent.parent
@@ -29,7 +28,7 @@ class TestSingleSFXData:
                      engine=FAEngine)
 
         assert isinstance(ds, type(xr.Dataset()))
-        assert len(ds.dims) == 4
+        assert len(ds.dims) == 5
         assert len(ds['t'].data) == 1
         assert 't' in list(ds.indexes)
         assert 'long_name' in ds['t'].attrs
@@ -147,7 +146,7 @@ class TestMultiSFXData:
         
         
         assert isinstance(ds, type(xr.Dataset()))
-        assert len(ds.dims) == 4
+        assert len(ds.dims) == 5
         assert len(ds['t'].data) == len(sfxfiles)
         assert 't' in list(ds.indexes)
         assert 'long_name' in ds['t'].attrs

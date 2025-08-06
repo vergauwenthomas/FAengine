@@ -44,11 +44,16 @@ def read_y_dim(epyfield) -> np.ndarray:
     yvals = epyfield.geometry._get_grid(indextype='xy')[1][:,0]
     return np.array(yvals)
 
+def read_z_dim(epyresource) -> np.array:
+    levels = epyresource.geometry.vcoordinate.levels
+    return np.array(levels)
+
+
 # ------------------------------------------
 #    proj related
 # ------------------------------------------
 
-def read_proj(epyfield) -> 'Cartopy.crs.CRS':
+def read_proj(epyfield) -> 'pyproj.proj.Proj':
     """
     Get the cartopy CRS from the Epygram field geometry.
 
@@ -62,8 +67,12 @@ def read_proj(epyfield) -> 'Cartopy.crs.CRS':
     cartopy.crs.CRS
         The cartopy coordinate reference system.
     """
-    crs = epyfield.geometry.default_cartopy_CRS()
-    return crs
+    
+    try:
+        proj = epyfield.geometry.default_cartopy_CRS()
+    except:
+        proj = epyfield.geometry._proj
+    return proj
 
 
 def read_grid_details(epyfield) -> dict:
@@ -176,8 +185,29 @@ def read_vertical_attrs(epyresource) -> dict:
     dict
         Dictionary of vertical coordinate grid attributes.
     """
+    retdict = {}
     vcoords = epyresource.geometry.vcoordinate
-    return vcoords.grid
+    
+    #add levels
+    try:
+        retdict['levels'] = vcoords.levels
+        retdict['Nlevels'] = len(retdict['levels'])
+    except:
+        pass
+
+    #add hybrid-pressure coefs
+    try:
+        retdict.update(vcoords.grid)
+    except:
+        pass
+
+    #add type of first fixes surface
+    try: 
+        retdict['typeoffirstficedsurface'] = vcoords.typeoffirstfixedsurface
+    except:
+        pass
+
+    return retdict
 
 
 
@@ -209,6 +239,25 @@ def read_h2d_field_attrs(epyfield) -> dict:
 
     return attrs
 
+def read_3d_field_attrs(epyfield) -> dict:
+    """
+    Extract and flatten the attributes dictionary from an Epygram field.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    dict
+        Dictionary of field attributes.
+    """
+    
+
+    return read_h2d_field_attrs(epyfield)
+
+
 
 # ------------------------------------------
 #    helpers
@@ -223,3 +272,5 @@ def _check_timestamp(timestamp) -> pd.Timestamp:
 
     return timestamp
    
+
+
