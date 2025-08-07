@@ -44,11 +44,16 @@ def read_y_dim(epyfield) -> np.ndarray:
     yvals = epyfield.geometry._get_grid(indextype='xy')[1][:,0]
     return np.array(yvals)
 
+def read_z_dim(epyresource) -> np.array:
+    levels = epyresource.geometry.vcoordinate.levels
+    return np.array(levels)
+
+
 # ------------------------------------------
 #    proj related
 # ------------------------------------------
 
-def read_proj(epyfield) -> 'Cartopy.crs.CRS':
+def read_proj(epyfield) -> 'pyproj.proj.Proj':
     """
     Get the cartopy CRS from the Epygram field geometry.
 
@@ -62,8 +67,12 @@ def read_proj(epyfield) -> 'Cartopy.crs.CRS':
     cartopy.crs.CRS
         The cartopy coordinate reference system.
     """
-    crs = epyfield.geometry.default_cartopy_CRS()
-    return crs
+    
+    try:
+        proj = epyfield.geometry.default_cartopy_CRS()
+    except:
+        proj = epyfield.geometry._proj
+    return proj
 
 
 def read_grid_details(epyfield) -> dict:
@@ -118,7 +127,9 @@ def read_basedate(epyfield) -> str:
     str
         ISO formatted base date string.
     """
-    return epyfield.validity.getbasis().isoformat()
+    basedate = epyfield.validity.getbasis() #Get datetime.datetime
+    basedate = _check_timestamp(basedate) #format to pd.timestamp and check for pgd
+    return basedate.isoformat() #to str
 
 
 def read_validdate(epyfield) -> str:
@@ -135,7 +146,9 @@ def read_validdate(epyfield) -> str:
     str
         ISO formatted valid date string.
     """
-    return epyfield.validity.get().isoformat()
+    validate = epyfield.validity.get() #get validate as dattime.datetime
+    validate = _check_timestamp(validate) #to pd.timestamp and pgd checking
+    return validate.isoformat() #to string
 
 def read_cumulativeduration(epyfield) -> str:
     """
@@ -172,8 +185,41 @@ def read_vertical_attrs(epyresource) -> dict:
     dict
         Dictionary of vertical coordinate grid attributes.
     """
+    retdict = {}
     vcoords = epyresource.geometry.vcoordinate
-    return vcoords.grid
+    
+    #add levels
+    try:
+        retdict['levels'] = vcoords.levels
+        retdict['Nlevels'] = len(retdict['levels'])
+    except:
+        pass
+
+    #add hybrid-pressure coefs
+    try:
+        Ais = [level[1]['Ai'] for level in vcoords.grid['gridlevels']]
+        Bis = [level[1]['Bi'] for level in vcoords.grid['gridlevels']]
+
+        retdict['Ai_coef'] = list(Ais)
+        retdict['Bi_coef'] = list(Bis)
+    except:
+        pass
+
+    #add type of first fixes surface
+    try: 
+        vtype = vcoords.typeoffirstfixedsurface
+        retdict['typeoffirstficedsurface'] = vtype
+        if vtype == 119:
+            name = "Hybrid-pressure"
+        elif vtype == 118:
+            name = "Hybrid-height"
+        else:
+            name='unknown-vcoordname'
+        retdict['vcoord_name'] = name
+    except:
+        pass
+
+    return retdict
 
 
 
@@ -201,6 +247,46 @@ def read_h2d_field_attrs(epyfield) -> dict:
     if 'generic' in attrs.keys():
         if isinstance(attrs['generic'], dict):
             attrs.update(attrs['generic'])
-            attrs.pop('generic')
+            del attrs['generic']
 
     return attrs
+
+def read_3d_field_attrs(epyfield) -> dict:
+    """
+    Extract and flatten the attributes dictionary from an Epygram field.
+
+    Parameters
+    ----------
+    epyfield : Epygram field
+        The Epygram field object.
+
+    Returns
+    -------
+    dict
+        Dictionary of field attributes.
+    """
+    
+
+    attrs = read_h2d_field_attrs(epyfield)
+    # if CombineLevels is nested and contains same info as the generic
+    if 'CombineLevels' in attrs.keys():
+        del attrs['CombineLevels']
+    return attrs
+
+
+
+# ------------------------------------------
+#    helpers
+# ------------------------------------------
+
+def _check_timestamp(timestamp) -> pd.Timestamp:
+    timestamp = pd.Timestamp(timestamp)
+    if timestamp.year == 1:
+        #This is indication of PGD file !! set validtime an reference timme 
+        #to unix epoch 
+        timestamp = pd.Timestamp(0)
+
+    return timestamp
+   
+
+
