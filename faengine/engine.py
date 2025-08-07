@@ -65,23 +65,11 @@ class FAEngine(BackendEntrypoint):
     
         
         # 2.--- Subset to target fields ----
-        fieldnames = r.find_fields_in_resource(whitefield_glob)
-        if not bool(fieldnames):
-            raise ValueError(f'No fields found for {whitefield_glob}! Here are all the fields: {r.listfields()}.')
-
-        # apply black-regex filter
-        if blackfield_glob:
-            fieldnames = [f for f in fieldnames if not fnmatch.fnmatch(f, blackfield_glob)]
-
-        # --- Apply drop_variables functionality ---
-        if drop_variables is not None:
-            if isinstance(drop_variables, str):
-                drop_variables = [drop_variables]
-            fieldnames = list(set(fieldnames)- set(drop_variables))
-        
-        #apply default blacklist
-        fieldnames = list(set(fieldnames)- set(default_blackfields))
-
+        fieldnames = find_target_fields(
+            epyresource = r,
+            whitefield_glob = whitefield_glob,
+            blackfield_glob = blackfield_glob,
+            drop_variables= drop_variables)
       
 
         # ---  Create dims ----- 
@@ -181,7 +169,8 @@ class FAEngine(BackendEntrypoint):
         # --- Reading attributes ----
         dataset_attrs={}
 
-        #1. Read the CRS 
+        #1. Read the CRS whitefield_glob: str | list,
+        
         crs = readers.read_proj(epyfield=dummy_field) #read
         dataset_attrs['proj_crs'] = formatters.fmt_proj(crs) # format
 
@@ -210,6 +199,64 @@ class FAEngine(BackendEntrypoint):
         ds = reduce_artificial_dimensions(ds=ds, namesettings=namesettings)
         
         return ds
+
+
+
+def find_target_fields(
+        epyresource,
+        whitefield_glob: str | list,
+        blackfield_glob: str | list | None,
+        drop_variables: list | None) -> list:
+    
+    #1.--- White fields --------
+
+    if isinstance(whitefield_glob, str):
+        fieldnames = epyresource.find_fields_in_resource(whitefield_glob)
+    elif isinstance(whitefield_glob, list):
+        fieldnames = []
+        for whiteglob in whitefield_glob:
+            try:
+                fieldnames.extend(epyresource.find_fields_in_resource(whiteglob))
+            except epygram.epygramError:
+                pass
+    else:
+        raise TypeError(f'whitelist_glob is not of type str or list but {type(whitefield_glob)}')
+
+    
+    if not bool(fieldnames):
+        raise ValueError(f'No fields found for {whitefield_glob}! Here are all the fields: {epyresource.listfields()}.')
+
+    #2. ---- Blackfields -----
+    if isinstance(blackfield_glob, str):
+        try:
+            blackfields = epyresource.find_fields_in_resource(blackfield_glob)
+        except epygram.epygramError:
+            blackfields = []
+    elif isinstance(blackfield_glob, list):
+        blackfields = []
+        for blackglob in blackfield_glob:
+            blackfields.extend(epyresource.find_fields_in_resource(blackglob))
+    elif blackfield_glob is None:
+        blackfields = []
+    else:
+        raise TypeError(f'blackfield_glob is not in a supported type.')
+    
+    #remove blackfields from targets
+    fieldnames = list(set(fieldnames) - set(blackfields))
+
+    #apply default blacklist
+    fieldnames = list(set(fieldnames)- set(default_blackfields))
+
+
+    #3. ----- Dropfields ----- 
+    # --- Apply drop_variables functionality ---
+    if drop_variables is not None:
+        if isinstance(drop_variables, str):
+            drop_variables = [drop_variables]
+        fieldnames = list(set(fieldnames)- set(drop_variables))
+    
+    return fieldnames
+
 
 
 def reduce_artificial_dimensions(ds, namesettings):

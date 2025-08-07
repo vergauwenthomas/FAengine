@@ -59,7 +59,16 @@ class TestSingleSFXData:
 
         dummy_path.unlink()
 
-                         
+    def test_whitelist(self):
+        ds = xr.open_dataset(filename_or_obj=sfxfiles[0],
+                     engine=FAEngine,
+                      backend_kwargs={
+                         'whitefield_glob':['*T2M', '*SNOW*'],
+                         'blackfield_glob': '*Q2M'}
+        )
+        assert len(ds.variables) == 80
+        
+
 
     def test_blacklist(self):
         ds = xr.open_dataset(filename_or_obj=sfxfiles[0],
