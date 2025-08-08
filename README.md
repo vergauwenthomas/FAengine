@@ -1,3 +1,7 @@
+
+# NOTE
+This repository is currently work in progress, and has not been tested so far! If you want to use this in an application, please contact me in advance. 
+
 # FAengine
 
 The aim of this package is to allow a user to seamlessly use xarray for FA files. 
