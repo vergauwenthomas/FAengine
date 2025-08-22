@@ -1,6 +1,6 @@
 [project]
 name = "faengine"
-version = "0.0.1"
+version = "0.0.2"
 description = "A xarray backend engine for FA files, by using EpyGram."
 authors = [
     {name = "Thomas Vergauwen",email = "thomas.vergauwen@meteo.be"}
