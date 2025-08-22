@@ -161,7 +161,7 @@ class FAEngine(BackendEntrypoint):
                 dimname=namesettings['coordnames']['basetime'])
 
         if add_latlon_coords:
-            lats, lons = readers.read_lat_lons(epyfield=dummy_field)
+            lons, lats = readers.read_lat_lons(epyfield=dummy_field)
             #Dependent coords
             dataset_coords[namesettings['coordnames']['latcoord']]= formatters.fmt_lat_variable(lats)
             dataset_coords[namesettings['coordnames']['loncoord']]= formatters.fmt_lon_variable(lons)
