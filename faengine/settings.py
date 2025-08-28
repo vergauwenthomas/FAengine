@@ -20,11 +20,11 @@ defaultsettings = {
 
 default_units = {
     #SURFEX
-    'SFX.T2M': "K",
+    'SFX.T2M': "kelvin",
     'SFX.Q2M': "kg/kg",
 
     #ALARO/AROME
-    'CLSTEMPERATURE': "K",
+    'CLSTEMPERATURE': "kelvin",
 }
 
 #the blackfields are always skipped
