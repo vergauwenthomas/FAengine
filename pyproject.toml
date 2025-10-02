@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy (>=2,<3.0.0)",
     "pandas (>=2,<3.0.0)",
-    "epygram (>=2.0,<3.0.0)",
+    "epygram == 1.5.2", #for windows compatibility ??
     "xarray (>=2025.7.1,<2026.0.0)",
     "matplotlib (>=3.10.5,<4.0.0)",
     "dask (>=2025.7.0,<2026.0.0)",
