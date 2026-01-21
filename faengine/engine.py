@@ -392,7 +392,7 @@ def epy_3D_to_vriable(field, fieldname, create_base_dim:bool, namesettings:dict,
 
     #TODO extract subdomain
     # Extract extension zone (it has no physical meaning).
-    if field.geometry.grid.get("LAMzone", None):
+    if field.geometry.grid.get("LAMzone", None) == "CIE":
         fieldata = field.geometry.extract_subzone(field.data,"CI")
 
     #Add trivial time dimension
@@ -442,7 +442,7 @@ def epy_H2D_to_variable(field, create_base_dim:bool, namesettings:dict,
 
     #TODO extract subdomain
     # Extract extension zone (it has no physical meaning).
-    if field.geometry.grid.get("LAMzone", None):
+    if field.geometry.grid.get("LAMzone", None) == "CIE":
         fieldata = field.geometry.extract_subzone(field.data,"CI")
 
     #get fieldname
