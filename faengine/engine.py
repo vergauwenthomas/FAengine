@@ -391,9 +391,12 @@ def epy_3D_to_vriable(field, fieldname, create_base_dim:bool, namesettings:dict,
 
 
     #TODO extract subdomain
+    # Extract extension zone (it has no physical meaning).
+    if field.geometry.grid.get("LAMzone", None):
+        fieldata = field.geometry.extract_subzone(field.data,"CI")
 
     #Add trivial time dimension
-    fieldata = np.array([field.data]) #add trivial time dimension
+    fieldata = np.array([fieldata]) #add trivial time dimension
 
     # Name the dimensions of the field (ORDER IS IMPORTANT)
     fielddim_order = [
@@ -438,12 +441,15 @@ def epy_H2D_to_variable(field, create_base_dim:bool, namesettings:dict,
             field.sp2gp()
 
     #TODO extract subdomain
+    # Extract extension zone (it has no physical meaning).
+    if field.geometry.grid.get("LAMzone", None):
+        fieldata = field.geometry.extract_subzone(field.data,"CI")
 
     #get fieldname
     fieldname = field.fid['FA']
 
     #Add trivial time dimension
-    fieldata = np.array([field.data]) #add trivial time dimension
+    fieldata = np.array([fieldata]) #add trivial time dimension
 
     # Name the dimensions of the field (ORDER IS IMPORTANT)
     fielddim_order = [
