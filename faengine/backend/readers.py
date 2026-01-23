@@ -24,7 +24,11 @@ def read_x_dim(epyfield) -> np.ndarray:
     np.ndarray
         Array of x-dimension values.
     """
-    xvals = epyfield.geometry._get_grid(indextype='xy')[0][0,:]
+    subzone=None
+    if epyfield.geometry.grid.get("LAMzone", None) == "CIE":
+        subzone="CI"
+
+    xvals = epyfield.geometry._get_grid(indextype='xy', subzone=subzone)[0][0,:]
     return np.array(xvals)
 
 def read_y_dim(epyfield) -> np.ndarray:
@@ -41,7 +45,11 @@ def read_y_dim(epyfield) -> np.ndarray:
     np.ndarray
         Array of y-dimension values.
     """
-    yvals = epyfield.geometry._get_grid(indextype='xy')[1][:,0]
+    subzone=None
+    if epyfield.geometry.grid.get("LAMzone", None) == "CIE":
+        subzone="CI"
+
+    yvals = epyfield.geometry._get_grid(indextype='xy', subzone=subzone)[1][:,0]
     return np.array(yvals)
 
 def read_z_dim(epyresource) -> np.array:
@@ -105,7 +113,11 @@ def read_lat_lons(epyfield):
     tuple of np.ndarray
         Tuple containing (lons, lats) arrays.
     """
-    lons, lats = epyfield.geometry.get_lonlat_grid()
+    subzone=None
+    if epyfield.geometry.grid.get("LAMzone", None) == "CIE":
+        subzone="CI"
+
+    lons, lats = epyfield.geometry.get_lonlat_grid(subzone=subzone)
     return lons, lats
 
 
